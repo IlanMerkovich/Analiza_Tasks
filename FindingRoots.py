@@ -106,23 +106,25 @@ if __name__ == "__main__":
 
     print("Finding intervals where roots exist:")
     intervals = find_intervals(sample_function, start, end, step)
-    print("Intervals:", intervals)
+    if intervals is not None:
+        print("Intervals:", intervals)
+        print("\nFinding roots using Bisection Method:")
+        for interval in intervals:
+            root, iterations = bisection_method(sample_function, interval[0], interval[1], tolerance)
+            if root is not None:
+                print(f"Root found using Bisection: {root} (in {iterations} iterations)")
 
-    print("\nFinding roots using Bisection Method:")
-    for interval in intervals:
-        root, iterations = bisection_method(sample_function, interval[0], interval[1], tolerance)
-        if root is not None:
-            print(f"Root found using Bisection: {root} (in {iterations} iterations)")
+        print("\nFinding roots using Secant Method:")
+        for interval in intervals:
+            root, iterations = secant_method(sample_function, interval[0], interval[1], tolerance)
+            if root is not None:
+                print(f"Root found using Secant: {root} (in {iterations} iterations)")
 
-    print("\nFinding roots using Secant Method:")
-    for interval in intervals:
-        root, iterations = secant_method(sample_function, interval[0], interval[1], tolerance)
-        if root is not None:
-            print(f"Root found using Secant: {root} (in {iterations} iterations)")
-
-    print("\nFinding roots using Newton-Raphson Method:")
-    for interval in intervals:
-        initial_guess = (interval[0] + interval[1]) / 2
-        root, iterations = newton_raphson_method(sample_function, sample_derivative, initial_guess, tolerance)
-        if root is not None:
-            print(f"Root found using Newton-Raphson: {root} (in {iterations} iterations)")
+        print("\nFinding roots using Newton-Raphson Method:")
+        for interval in intervals:
+            initial_guess = (interval[0] + interval[1]) / 2
+            root, iterations = newton_raphson_method(sample_function, sample_derivative, initial_guess, tolerance)
+            if root is not None:
+                print(f"Root found using Newton-Raphson: {root} (in {iterations} iterations)")
+    else:
+        print(f"No roots found!")
