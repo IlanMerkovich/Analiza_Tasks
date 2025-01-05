@@ -94,10 +94,10 @@ def newton_raphson_method(func, derivative, initial_guess, tolerance=0.0001, max
 
 if __name__ == "__main__":
     def sample_function(x):
-        return x**3+sp.cos(x)
+        return x**3-4*x**2+3
 
     def sample_derivative(x):
-        return 3*x**2-sp.sin(x)
+        return 3*x**2-8*x
 
     start = -10
     end = 10
