@@ -1,8 +1,16 @@
+import math
 import sympy as sp
+
+
+def max_iterations(a, b, err):
+    s = int(math.floor(-math.log2(err / (b - a)) - 1))
+    return s
+
+
 def find_intervals(func, start, end, step=0.1):
     """
     Finds intervals [x1, x2] where f(x1)*f(x2) <= 0, indicating a root exists between x1 and x2.
-   """
+    """
     intervals = []
     x1 = start
     f_x1 = func(x1)
@@ -17,114 +25,111 @@ def find_intervals(func, start, end, step=0.1):
         x1 = x2
         f_x1 = f_x2
 
-    print(intervals)
     return intervals
 
 
-def bisection_method(func, start_point, end_point, tolerance):
+def bisection_method(f, a, b, tol=1e-6):
     """
-    Implements the Bisection Method to find a root of a function.
+    Perform the Bisection Method to find a root of f in [a, b].
     """
-    iterations = 0
-    while (end_point - start_point) / 2 > tolerance:
-        iterations += 1
-        midpoint = (start_point + end_point) / 2
-        if func(midpoint) == 0:
-            return midpoint, iterations
-        elif func(start_point) * func(midpoint) < 0:
-            end_point = midpoint
+    if math.copysign(1, f(a)) == math.copysign(1, f(b)):
+        raise Exception("The scalars a and b do not bound a root")
+
+    c, k = 0, 0
+    max_iter = max_iterations(a, b, tol)
+
+    while abs(b - a) > tol and k < max_iter:
+        c = a + (b - a) / 2
+
+        if f(c) == 0:
+            return c
+
+        if f(c) * f(a) < 0:
+            b = c
         else:
-            start_point = midpoint
-    root = (start_point + end_point) / 2
-    return root, iterations
+            a = c
+        k += 1
 
-def secant_method(func, start_point, end_point, tolerance, max_iterations=1000):
+    return c,k
+
+def secant_method(f, x0, x1, TOL, N=100):
     """
-    Implements the Secant Method to find a root of a function.
+    Perform the Secant Method to find a root of f.
     """
-    x0, x1 = start_point, end_point
-    iterations = 0
+    for i in range(N):
+        if f(x1) - f(x0) == 0:
+            print("Error: Division by zero in Secant Method.")
+            return None, i
 
-    for _ in range(max_iterations):
-        iterations += 1
-        f_x0 = func(x0)
-        f_x1 = func(x1)
+        p = x0 - f(x0) * ((x1 - x0) / (f(x1) - f(x0)))
 
-        if f_x1 - f_x0 == 0:
-            print("Error: Division by zero.")
-            return None, iterations
+        if abs(p - x1) < TOL:
+            return p, i + 1
 
-        x2 = x1 - f_x1 * (x1 - x0) / (f_x1 - f_x0)
+        x0 = x1
+        x1 = p
 
-        if abs(x2 - x1) < tolerance:
-            return x2, iterations
-
-        x0, x1 = x1, x2
-
-    print("method did not converge.")
-    return None, iterations
+    print("Secant Method did not converge within the maximum iterations.")
+    return None, N
 
 
-def newton_raphson_method(func, derivative, initial_guess, tolerance=0.0001, max_iterations=1000):
+def newton_raphson_method(f, df, p0, TOL, N=100):
     """
-    Implements the Newton-Raphson Method to find a root of a function.
+    Perform the Newton-Raphson Method to find a root of f starting at p0.
     """
-    x_current = initial_guess
-    iterations = 0
+    for i in range(N):
+        if df(p0) == 0:
+            print("Error: Derivative is zero at p0 in Newton-Raphson Method.")
+            return None, i
 
-    for _ in range(max_iterations):
-        iterations += 1
-        f_value = func(x_current)
-        derivative_value = derivative(x_current)
+        p = p0 - f(p0) / df(p0)
 
-        if derivative_value == 0:
-            print("Error: Derivative is zero.")
-            return None, iterations
+        if abs(p - p0) < TOL:
+            return p, i + 1
 
-        x_next = x_current - f_value / derivative_value
+        p0 = p
 
-        if abs(x_next - x_current) < tolerance:
-            return x_next, iterations
-
-        x_current = x_next
-
-    print("method did not converge.")
-    return None, iterations
+    print("Newton-Raphson Method did not converge within the maximum iterations.")
+    return None, N
 
 
 if __name__ == "__main__":
     def sample_function(x):
-        return x**3-4*x**2+3
+        return x**2 - 4 * math.sin(x)
+
 
     def sample_derivative(x):
-        return 3*x**2-8*x
+        return 3*x**2 - 4*math.cos(x)
 
-    start = -10
-    end = 10
+    start = -100
+    end = 100
     step = 0.1
-    tolerance = 0.0000001
+    tolerance = 1e-16
 
     print("Finding intervals where roots exist:")
     intervals = find_intervals(sample_function, start, end, step)
-    if intervals is not None:
+    if intervals:
         print("Intervals:", intervals)
         print("\nFinding roots using Bisection Method:")
         for interval in intervals:
-            root, iterations = bisection_method(sample_function, interval[0], interval[1], tolerance)
-            if root is not None:
-                print(f"Root found using Bisection: {root} (in {iterations} iterations)")
+            try:
+                root, iterations = bisection_method(sample_function, interval[0], interval[1], tolerance)
+                if root is not None:
+                    print(f"Root found using Bisection: {root:.10f} (in {iterations} iterations)")
+            except Exception as e:
+                print(f"Bisection Method Error: {e}")
 
         print("\nFinding roots using Secant Method:")
         for interval in intervals:
             root, iterations = secant_method(sample_function, interval[0], interval[1], tolerance)
             if root is not None:
-                print(f"Root found using Secant: {root} (in {iterations} iterations)")
+                print(f"Root found using Secant: {root:.10f} (in {iterations} iterations)")
 
         print("\nFinding roots using Newton-Raphson Method:")
         for interval in intervals:
             initial_guess = (interval[0] + interval[1]) / 2
             root, iterations = newton_raphson_method(sample_function, sample_derivative, initial_guess, tolerance)
             if root is not None:
-                print(f"Root found using Newton-Raphson: {root} (in {iterations} iterations)")
+                print(f"Root found using Newton-Raphson: {root:.10f} (in {iterations} iterations)")
     else:
-        print(f"No roots found!")
+        print("No roots found!")
