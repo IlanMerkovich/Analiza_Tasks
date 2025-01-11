@@ -1,135 +1,140 @@
-import math
-import sympy as sp
+
+def secant_method(f, x0, x1, TOL=1e-10, N=50):
+    for i in range(N):
+        if f(x1) - f(x0) == 0:
+            return None, i
+        p = x0 - f(x0) * ((x1 - x0) / (f(x1) - f(x0)))
+        if abs(p - x1) < TOL:
+            return p, i + 1
+        x0 = x1
+        x1 = p
+    return None, N
 
 
-def max_iterations(a, b, err):
-    s = int(math.floor(-math.log2(err / (b - a)) - 1))
-    return s
+# Newton-Raphson Method
+def newton_raphson(f, df, p0, TOL=1e-10, N=50):
+    for i in range(N):
+        if df(p0) == 0:
+            return None, i
+        p = p0 - f(p0) / df(p0)
+        if abs(p - p0) < TOL:
+            return p, i + 1
+        p0 = p
+    return None, N
 
 
-def find_intervals(func, start, end, step=0.1):
-    """
-    Finds intervals [x1, x2] where f(x1)*f(x2) <= 0, indicating a root exists between x1 and x2.
-    """
+# Bisection Method
+def bisection_method(f, a, b, tol=1e-10, max_steps=50):
+    if f(a) * f(b) >= 0:
+        return None, 0
+    c = 0
+    for k in range(max_steps):
+        c = (a + b) / 2  # Midpoint
+        if f(c) == 0 or abs(b - a) < tol:
+            return c, k + 1
+        if f(c) * f(a) < 0:
+            b = c  # Root is in [a, c]
+        else:
+            a = c  # Root is in [c, b]
+    return c, max_steps
+
+
+# Find intervals with potential roots
+def find_potential_root_intervals(f, df, start, end, step=0.1):
     intervals = []
-    x1 = start
-    f_x1 = func(x1)
-
-    while x1 < end:
-        x2 = x1 + step
-        f_x2 = func(x2)
-
-        if f_x1 * f_x2 <= 0:
-            intervals.append((x1, x2))
-
-        x1 = x2
-        f_x1 = f_x2
-
+    x = start
+    while x < end:
+        x_next = x + step
+        if f(x) * f(x_next) < 0:
+            intervals.append((x, x_next))
+        elif f(x) == 0 or df(x) * df(x_next) < 0:
+            intervals.append((x, x_next))
+        x = x_next
     return intervals
 
 
-def bisection_method(f, a, b, tol=1e-6):
-    """
-    Perform the Bisection Method to find a root of f in [a, b].
-    """
-    if math.copysign(1, f(a)) == math.copysign(1, f(b)):
-        raise Exception("The scalars a and b do not bound a root")
+# Main Program
+def main():
+    print("=" * 50)
+    print("Running Root-Finding Program")
+    print("=" * 50)
 
-    c, k = 0, 0
-    max_iter = max_iterations(a, b, tol)
+    # Define the function and its derivative
+    def f(x):
+        return x ** 4 + x ** 3 - 3 * x ** 2  # Example function
 
-    while abs(b - a) > tol and k < max_iter:
-        c = a + (b - a) / 2
+    def df(x):
+        return 4 * x ** 3 + 3 * x ** 2 - 6 * x  # Derivative of the function
 
-        if f(c) == 0:
-            return c
+    # Define the range and step size
+    start, end, step = -10, 10, 0.1
 
-        if f(c) * f(a) < 0:
-            b = c
-        else:
-            a = c
-        k += 1
+    # Find intervals and roots
+    intervals = find_potential_root_intervals(f, df, start, end, step)
 
-    return c,k
+    print("\nIntervals with potential simple or flat roots in f(x):")
+    print("-" * 50)
+    for interval in intervals:
+        print(f"Interval: {interval[0]:.6f} to {interval[1]:.6f}")
+    print("-" * 50)
 
-def secant_method(f, x0, x1, TOL, N=100):
-    """
-    Perform the Secant Method to find a root of f.
-    """
-    for i in range(N):
-        if f(x1) - f(x0) == 0:
-            print("Error: Division by zero in Secant Method.")
-            return None, i
+    print("\nChoose a method to solve for the roots.\n")
 
-        p = x0 - f(x0) * ((x1 - x0) / (f(x1) - f(x0)))
+    while True:
+        print("=" * 50)
+        print("Choose a method:")
+        print("1. Secant Method")
+        print("2. Newton-Raphson Method")
+        print("3. Bisection Method")
+        print("0. Exit")
+        print("=" * 50)
 
-        if abs(p - x1) < TOL:
-            return p, i + 1
+        choice = input("Enter the number of your choice: ")
 
-        x0 = x1
-        x1 = p
+        if choice == '0':
+            print("\nExiting the program. Goodbye!")
+            break
 
-    print("Secant Method did not converge within the maximum iterations.")
-    return None, N
+        # Run the chosen method for each interval
+        for interval in intervals:
+            a, b = interval
+            print(f"\nProcessing interval [{a:.6f}, {b:.6f}]:")
 
+            if choice == '1':
+                # Secant Method
+                secant_root, secant_iterations = secant_method(f, a, b)
+                if secant_root is not None:
+                    print(f"Secant method root: {secant_root:.6f}")
+                    print(f"Number of iterations: {secant_iterations}")
+                else:
+                    print("Secant method failed.")
 
-def newton_raphson_method(f, df, p0, TOL, N=100):
-    """
-    Perform the Newton-Raphson Method to find a root of f starting at p0.
-    """
-    for i in range(N):
-        if df(p0) == 0:
-            print("Error: Derivative is zero at p0 in Newton-Raphson Method.")
-            return None, i
+            elif choice == '2':
+                # Newton-Raphson Method (using midpoint of interval as starting point)
+                midpoint = (a + b) / 2
+                newton_root, newton_iterations = newton_raphson(f, df, midpoint)
+                if newton_root is not None:
+                    print(f"Newton-Raphson method root: {newton_root:.6f}")
+                    print(f"Number of iterations: {newton_iterations}")
+                else:
+                    print("Newton-Raphson method failed.")
 
-        p = p0 - f(p0) / df(p0)
+            elif choice == '3':
+                # Bisection Method
+                try:
+                    bisection_root, bisection_iterations = bisection_method(f, a, b)
+                    if bisection_root is not None:
+                        print(f"Bisection method root: {bisection_root:.6f}")
+                        print(f"Number of iterations: {bisection_iterations}")
+                except ValueError as e:
+                    print(f"Bisection method failed: {e}")
 
-        if abs(p - p0) < TOL:
-            return p, i + 1
+            else:
+                print("Invalid choice. Please try again.")
+                break
 
-        p0 = p
-
-    print("Newton-Raphson Method did not converge within the maximum iterations.")
-    return None, N
+        print("-" * 50)
 
 
 if __name__ == "__main__":
-    def sample_function(x):
-        return x**2 - 4 * math.sin(x)
-
-
-    def sample_derivative(x):
-        return 3*x**2 - 4*math.cos(x)
-
-    start = -100
-    end = 100
-    step = 0.1
-    tolerance = 1e-16
-
-    print("Finding intervals where roots exist:")
-    intervals = find_intervals(sample_function, start, end, step)
-    if intervals:
-        print("Intervals:", intervals)
-        print("\nFinding roots using Bisection Method:")
-        for interval in intervals:
-            try:
-                root, iterations = bisection_method(sample_function, interval[0], interval[1], tolerance)
-                if root is not None:
-                    print(f"Root found using Bisection: {root:.10f} (in {iterations} iterations)")
-            except Exception as e:
-                print(f"Bisection Method Error: {e}")
-
-        print("\nFinding roots using Secant Method:")
-        for interval in intervals:
-            root, iterations = secant_method(sample_function, interval[0], interval[1], tolerance)
-            if root is not None:
-                print(f"Root found using Secant: {root:.10f} (in {iterations} iterations)")
-
-        print("\nFinding roots using Newton-Raphson Method:")
-        for interval in intervals:
-            initial_guess = (interval[0] + interval[1]) / 2
-            root, iterations = newton_raphson_method(sample_function, sample_derivative, initial_guess, tolerance)
-            if root is not None:
-                print(f"Root found using Newton-Raphson: {root:.10f} (in {iterations} iterations)")
-    else:
-        print("No roots found!")
+    main()
